@@ -13,7 +13,8 @@ import torch
 import torchvision
 import torch.nn as nn
 from torch.utils.data import DataLoader, TensorDataset, Dataset, random_split
-from torchvision import transforms
+from torchvision import transforms,models
+from torchvision.models import MobileNet_V2_Weights
 from torchvision.datasets import ImageFolder
 import torch.optim as optim
 import torchvision.datasets as datasets
@@ -33,20 +34,15 @@ class Net(nn.Module):
         super().__init__()
     # Network CNN 3 + FC 2 + fc2
        # nn. is with parameters to be adjusted
-        self.conv1 = nn.Conv2d(n_channel, 32, kernel_size=8, stride=4)
-        self.conv2 = nn.Conv2d(32, 64, kernel_size=3, stride=2)
-        self.conv3 = nn.Conv2d(64, 64, kernel_size=3, stride=1)
-        self.fc4 = nn.Linear(960, 512)
-        self.fc5 = nn.Linear(512, 256)
+        # v2 = models.mobilenet_v2(weights =MobileNet_V2_Weights.IMAGENET1K_V1)
+        v2 = models.mobilenet_v2(weights =MobileNet_V2_Weights.DEFAULT)
+        v2.classifier[1] = nn.Linear(in_features=v2.last_channel ,out_features=256)
+    # <CNN layer>
+       
         self.fc6 = nn.Linear(260, 260)
         self.fc7 = nn.Linear(260, n_out)
         self.relu = nn.ReLU(inplace=True)
     # Weight set
-        torch.nn.init.kaiming_normal_(self.conv1.weight)
-        torch.nn.init.kaiming_normal_(self.conv2.weight)
-        torch.nn.init.kaiming_normal_(self.conv3.weight)
-        torch.nn.init.kaiming_normal_(self.fc4.weight)
-        torch.nn.init.kaiming_normal_(self.fc5.weight)
         torch.nn.init.kaiming_normal_(self.fc6.weight)
         torch.nn.init.kaiming_normal_(self.fc7.weight)
         #self.fc7.weight = nn.Parameter(torch.zeros(n_channel,260))
@@ -54,23 +50,7 @@ class Net(nn.Module):
         #self.batch = nn.BatchNorm2d(0.2)
         self.flatten = nn.Flatten()
     # CNN layer
-        self.cnn_layer = nn.Sequential(
-            self.conv1,
-            self.relu,
-            self.conv2,
-            self.relu,
-            self.conv3,
-            self.relu,
-            # self.maxpool,
-            self.flatten
-        )
-    # FC layer
-        self.fc_layer = nn.Sequential(
-            self.fc4,
-            self.relu,
-            self.fc5,
-            self.relu
-        )
+        self.v2_layer = v2
     # Concat layer (CNN output + Cmd data)
         self.concat_layer = nn.Sequential(
             self.fc6,
@@ -80,11 +60,10 @@ class Net(nn.Module):
     # forward layer
 
     def forward(self, x, c):
-        x1 = self.cnn_layer(x)
-        x2 = self.fc_layer(x1)
-        x3 = torch.cat([x2, c], dim=1)
-        x4 = self.concat_layer(x3)
-        return x4
+        x1 = self.v2_layer(x)
+        x2 = torch.cat([x1, c], dim=1)
+        x3 = self.concat_layer(x2)
+        return x3
 
 
 class deep_learning:
@@ -95,7 +74,9 @@ class deep_learning:
         torch.manual_seed(0)
         self.net = Net(n_channel, n_action)
         self.net.to(self.device)
+        print(self.net)
         print(self.device)
+        print("mobilenetv2!!!!!")
         self.optimizer = optim.Adam(
             self.net.parameters(), eps=1e-2, weight_decay=5e-4)
         self.totensor = transforms.ToTensor()
@@ -162,7 +143,7 @@ class deep_learning:
             t_train.to(self.device, non_blocking=True)
             break
         # <use data augmentation>
-        x_train = self.transform_color(x_train)
+        # x_train = self.transform_color(x_train)
         # <learning>
         self.optimizer.zero_grad()
         y_train = self.net(x_train, c_train)
