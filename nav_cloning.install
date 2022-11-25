@@ -3,9 +3,9 @@
     local-name: fulanghua_navigation
     version: long_period
 - git:
-    uri: https//github.com/open-rdc/waypoint_nav
+    uri: https//github.com/haruyama8940/waypoint_nav
     local-name: waypoint_nav
-    version: main
+    version: intersection
 - git:
     uri: https://github.com/open-rdc/turtlebot3
     local-name: turtlebot3
