@@ -9,7 +9,7 @@ import cv2
 from sensor_msgs.msg import Image
 from cv_bridge import CvBridge, CvBridgeError
 # from nav_cloning_with_direction_net import *
-from nav_cloning_with_direction_net_v2 import *
+from nav_cloning_with_direction_net import *
 from skimage.transform import resize
 from geometry_msgs.msg import Twist
 from geometry_msgs.msg import PoseArray
@@ -18,7 +18,7 @@ from std_srvs.srv import Trigger
 from nav_msgs.msg import Path
 from std_msgs.msg import Int8MultiArray
 #from waypoint_nav.msg import cmd_dir_intersection
-from scenario_navigation_msgs.msg import cmd_dir_intersection
+from scenario_navigation_msgs import cmd_dir_intersection
 from geometry_msgs.msg import PoseWithCovarianceStamped
 from std_srvs.srv import Empty
 from std_srvs.srv import SetBool, SetBoolResponse
@@ -70,8 +70,8 @@ class nav_cloning_node:
         self.pos_y = 0.0
         self.pos_the = 0.0
         self.is_started = False
-        self.cmd_dir_data = [0, 0, 0]
-        self.episode_num =120000
+        self.cmd_dir_data = [0, 0, 0, 0]
+        self.episode_num =60000
         print(self.episode_num)
         #self.cmd_dir_data = [0, 0, 0]
         self.start_time_s = rospy.get_time()

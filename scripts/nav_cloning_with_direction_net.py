@@ -38,8 +38,8 @@ class Net(nn.Module):
         self.conv3 = nn.Conv2d(64, 64, kernel_size=3, stride=1)
         self.fc4 = nn.Linear(960, 512)
         self.fc5 = nn.Linear(512, 256)
-        self.fc6 = nn.Linear(260, 260)
-        self.fc7 = nn.Linear(260, n_out)
+        self.fc6 = nn.Linear(259, 259)
+        self.fc7 = nn.Linear(259, n_out)
         self.relu = nn.ReLU(inplace=True)
     # Weight set
         torch.nn.init.kaiming_normal_(self.conv1.weight)

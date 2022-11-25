@@ -39,8 +39,8 @@ class Net(nn.Module):
         v2.classifier[1] = nn.Linear(in_features=v2.last_channel ,out_features=256)
     # <CNN layer>
        
-        self.fc6 = nn.Linear(259, 259)
-        self.fc7 = nn.Linear(259, n_out)
+        self.fc6 = nn.Linear(260, 260)
+        self.fc7 = nn.Linear(260, n_out)
         self.relu = nn.ReLU(inplace=True)
     # Weight set
         torch.nn.init.kaiming_normal_(self.fc6.weight)
