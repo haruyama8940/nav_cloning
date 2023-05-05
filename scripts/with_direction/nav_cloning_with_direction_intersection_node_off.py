@@ -67,19 +67,21 @@ class nav_cloning_node:
         self.save_path = roslib.packages.get_pkg_dir('nav_cloning') + '/data/model_with_dir_'+str(self.mode)+'/pytorch/'
         # self.load_path =roslib.packages.get_pkg_dir('nav_cloning') + '/data/model_with_dir_'+str(self.mode)+'/pytorch/v2_net/model_gpu.pt'
         # self.load_path= '/home/rdclab/catkin_ws/src/nav_cloning/data/model_with_dir_selected_training/pytorch/v2_test120000/model_gpu.pt'
-        self.load_path= '/home/rdclab/catkin_ws/src/nav_cloning/data/model_with_dir_selected_training/pytorch/off_new/model_gpu.pt'
-        
+        # self.load_path= '/home/rdclab/catkin_ws/src/nav_cloning/data/model_with_dir_selected_training/pytorch/koremade_off/model_gpu.pt'
+        # self.load_path ='/home/rdclab/orne_ws/src/nav_cloning/data/model_with_dir_selected_training/pytorch/off_pad3_loop_1/model_gpu.pt'
+        self.load_path = roslib.packages.get_pkg_dir('nav_cloning') + '/data/model_with_dir_'+str(self.mode)+'/pytorch/off_pad_3_loop_1_30_ep_add/model_gpu.pt'
+
         self.previous_reset_time = 0
         self.pos_x = 0.0
         self.pos_y = 0.0
         self.pos_the = 0.0
         self.is_started = False
         self.cmd_dir_data = [0, 0, 0]
-        self.episode_num =12000
-        self.target_dataset = 8500
+        # self.episode_num
+        # self.target_dataset
         self.train_flag = False
         self.padding_data = 3
-        print(self.episode_num)
+        # print(self.episode_num)
         #self.cmd_dir_data = [0, 0, 0]
         self.start_time_s = rospy.get_time()
         os.makedirs(self.path + self.start_time)
@@ -184,7 +186,7 @@ class nav_cloning_node:
 
         if self.episode == 0:
             self.learning = False
-            #self.dl.save(self.save_path)
+            # self.dl.save(self.save_path)
             self.dl.load(self.load_path)
             print("load model",self.load_path)
         
@@ -250,24 +252,24 @@ class nav_cloning_node:
                 action = self.dl.act(img, self.cmd_dir_data)
                 angle_error = abs(action - target_action)
                 loss = 0
-                # if angle_error > 0.05 and self.train_flag == False:
-                if angle_error > 0.02 and self.train_flag == False:
+                if angle_error > 0.05 and self.train_flag == False:
+                # if (angle_error > 0.05 or self.cmd_dir_data == (0,1,0) or self.cmd_dir_data == (0,0,1) ) and self.train_flag == False:
                     dataset , dataset_num, train_dataset = self.dl.make_dataset(img,self.cmd_dir_data,target_action)
                     action, loss, = self.dl.act_and_trains(img, self.cmd_dir_data,train_dataset)
-                    if self.cmd_dir_data == (0,1,0) or self.cmd_dir_data == (0,0,1):
-                        for i in range(self.padding_data):
-                            print("padding")
-                            dataset , dataset_num, train_dataset = self.dl.make_dataset(img,self.cmd_dir_data,target_action)
+                    # if self.cmd_dir_data == (0,1,0) or self.cmd_dir_data == (0,0,1):
+                    #     for i in range(self.padding_data):
+                    #         print("padding")
+                    #         dataset , dataset_num, train_dataset = self.dl.make_dataset(img,self.cmd_dir_data,target_action)
                     if abs(target_action) < 0.2: #0.15 #0.1
                         dataset , dataset_num, train_dataset = self.dl.make_dataset(img_left,self.cmd_dir_data,target_action-0.2)
                         action_left,  loss_left  = self.dl.act_and_trains(img_left, self.cmd_dir_data, train_dataset)
                         dataset , dataset_num, train_dataset = self.dl.make_dataset(img_right,self.cmd_dir_data,target_action+0.2)
                         action_right, loss_right = self.dl.act_and_trains(img_right, self.cmd_dir_data, train_dataset)
-                        if self.cmd_dir_data == (0,1,0) or self.cmd_dir_data == (0,0,1):
-                            for i in range(self.padding_data):
-                                print("padding")
-                                dataset , dataset_num, train_dataset = self.dl.make_dataset(img_left,self.cmd_dir_data,target_action-0.2)
-                                dataset , dataset_num, train_dataset = self.dl.make_dataset(img_right,self.cmd_dir_data,target_action+0.2)
+                        # if self.cmd_dir_data == (0,1,0) or self.cmd_dir_data == (0,0,1):
+                        #     for i in range(self.padding_data):
+                        #         print("padding")
+                        #         dataset , dataset_num, train_dataset = self.dl.make_dataset(img_left,self.cmd_dir_data,target_action-0.2)
+                        #         dataset , dataset_num, train_dataset = self.dl.make_dataset(img_right,self.cmd_dir_data,target_action+0.2)
                                 
                     #if dataset_num >= self.target_dataset:
                     if self.loop_count_flag:
@@ -280,13 +282,20 @@ class nav_cloning_node:
                     loss = self.dl.trains(train_dataset)
                     self.learning = False
                     self.dl.save(self.save_path)
+                    print("Finish learning!!")
                 else:
                     pass
                 # if distance > 0.15 or angle_error > 0.3:
                 #     self.select_dl = False
                 # if distance > 0.1:
                 #     self.select_dl = False
-                if distance > 0.1:
+                # if distance > 0.1:
+                #     self.select_dl = False
+                # elif distance < 0.05:
+                #     self.select_dl = True
+                # if self.select_dl and self.episode >= 0:
+                #     target_action = action
+                if distance > 0.07 or angle_error >0.3:
                     self.select_dl = False
                 elif distance < 0.05:
                     self.select_dl = True

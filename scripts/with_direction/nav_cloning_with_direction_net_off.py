@@ -24,9 +24,11 @@ from yaml import load
 
 
 # HYPER PARAM
-BATCH_SIZE = 16
+BATCH_SIZE = 8
 MAX_DATA = 10000
-EPOCH =20
+EPOCH =30
+PADDING_DATA = 3
+
 
 class Net(nn.Module):
     def __init__(self, n_channel, n_out):
@@ -116,7 +118,7 @@ class deep_learning:
         self.transform = transforms.Compose([transforms.ToTensor()])
         self.first_flag = True
         torch.backends.cudnn.benchmark = False
-        self.writer = SummaryWriter(log_dir='/home/rdclab/catkin_ws/src/nav_cloning/runs')
+        self.writer = SummaryWriter(log_dir='/home/rdclab/orne_ws/src/nav_cloning/runs')
 
         #self.writer = SummaryWriter(log_dir="/home/haru/nav_ws/src/nav_cloning/runs",comment="log_1")
     def make_dataset(self,img, dir_cmd, target_angle):
@@ -140,9 +142,16 @@ class deep_learning:
                          device=self.device).unsqueeze(0)
         t = torch.tensor([target_angle], dtype=torch.float32,
                          device=self.device).unsqueeze(0)
-        self.x_cat = torch.cat([self.x_cat, x], dim=0)
-        self.c_cat = torch.cat([self.c_cat, c], dim=0)
-        self.t_cat = torch.cat([self.t_cat, t], dim=0)
+        if dir_cmd == (0,1,0) or dir_cmd == (0,0,1):  
+            for i in range(PADDING_DATA):
+                self.x_cat = torch.cat([self.x_cat, x], dim=0)
+                self.c_cat = torch.cat([self.c_cat, c], dim=0)
+                self.t_cat = torch.cat([self.t_cat, t], dim=0)
+            print("Padding data!!!!!")
+        else:
+            self.x_cat = torch.cat([self.x_cat, x], dim=0)
+            self.c_cat = torch.cat([self.c_cat, c], dim=0)
+            self.t_cat = torch.cat([self.t_cat, t], dim=0)
 
         # <make dataset>
         #print("train x =",x.shape,x.device,"train c =" ,c.shape,c.device,"tarain t = " ,t.shape,t.device)
@@ -151,8 +160,11 @@ class deep_learning:
         train_dataset = DataLoader(dataset, batch_size=BATCH_SIZE, generator=torch.Generator(
             'cpu').manual_seed(0), shuffle=True)
         print("dataset_num:",len(dataset))
-        return dataset,len(dataset),train_dataset
-
+        return dataset,len(dataset) ,train_dataset
+    # def load_dataset(self,dataset):
+    #     train_dataset = DataLoader(dataset, batch_size=BATCH_SIZE, generator=torch.Generator(
+    #         'cpu').manual_seed(0), shuffle=True)
+    #     return train_dataset
     def trains(self,train_dataset):
         #self.device = torch.device('cuda')
         print(self.device)

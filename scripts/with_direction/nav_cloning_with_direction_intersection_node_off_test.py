@@ -38,16 +38,11 @@ class nav_cloning_node:
         self.dl = deep_learning(n_action = self.action_num)
         self.bridge = CvBridge()
         self.image_sub = rospy.Subscriber("/camera/rgb/image_raw", Image, self.callback)
-        self.image_left_sub = rospy.Subscriber("/camera_left/rgb/image_raw", Image, self.callback_left_camera)
-        self.image_right_sub = rospy.Subscriber("/camera_right/rgb/image_raw", Image, self.callback_right_camera)
-        # self.vel_sub = rospy.Subscriber("/nav_vel", Twist, self.callback_vel)
         self.action_pub = rospy.Publisher("action", Int8, queue_size=1)
         self.nav_pub = rospy.Publisher('/cmd_vel', Twist, queue_size=10)
         self.srv = rospy.Service('/training', SetBool, self.callback_dl_training)
         self.loop_count_srv = rospy.Service('loop_count',SetBool,self.loop_count_callback)
         self.mode_save_srv = rospy.Service('/model_save', Trigger, self.callback_model_save) 
-        # self.path_sub = rospy.Subscriber("/move_base/GlobalPlanner/plan", Path, self.callback_path)
- #       self.cmd_dir_sub = rospy.Subscriber("/cmd_dir_intersection", Int8MultiArray, self.callback_cmd,queue_size=1)
         self.cmd_dir_sub = rospy.Subscriber("/cmd_dir_intersection", cmd_dir_intersection, self.callback_cmd,queue_size=1)
         self.min_distance = 0.0
         self.action = 0.0
@@ -63,10 +58,9 @@ class nav_cloning_node:
         self.start_time = time.strftime("%Y%m%d_%H:%M:%S")
         self.path = roslib.packages.get_pkg_dir('nav_cloning') + '/data/result_with_dir_'+str(self.mode)+'/'
         self.save_path = roslib.packages.get_pkg_dir('nav_cloning') + '/data/model_with_dir_'+str(self.mode)+'/pytorch/'
-        # self.load_path =roslib.packages.get_pkg_dir('nav_cloning') + '/data/model_with_dir_'+str(self.mode)+'/pytorch/v2_net/model_gpu.pt'
-        # self.load_path= '/home/rdclab/catkin_ws/src/nav_cloning/data/model_with_dir_selected_training/pytorch/v2_test120000/model_gpu.pt'
-        self.load_path='/home/rdclab/orne_ws/src/nav_cloning/data/model_with_dir_selected_training/pytorch/off_pad_3_loop_1_30_ep_add/model_gpu.pt'
-        
+        #self.load_path='/home/rdclab/orne_ws/src/nav_cloning/data/model_with_dir_selected_training/pytorch/off_pad_3_loop_1_30_ep_add/model_gpu.pt'
+        self.load_path = roslib.packages.get_pkg_dir('nav_cloning') + '/data/model_with_dir_'+str(self.mode)+'/pytorch/off_pad_3_loop_1_30_ep_add/model_gpu.pt'
+
         self.previous_reset_time = 0
         self.pos_x = 0.0
         self.pos_y = 0.0
@@ -89,18 +83,6 @@ class nav_cloning_node:
     def callback(self, data):
         try:
             self.cv_image = self.bridge.imgmsg_to_cv2(data, "bgr8")
-        except CvBridgeError as e:
-            print(e)
-
-    def callback_left_camera(self, data):
-        try:
-            self.cv_left_image = self.bridge.imgmsg_to_cv2(data, "bgr8")
-        except CvBridgeError as e:
-            print(e)
-
-    def callback_right_camera(self, data):
-        try:
-            self.cv_right_image = self.bridge.imgmsg_to_cv2(data, "bgr8")
         except CvBridgeError as e:
             print(e)
 
@@ -137,18 +119,6 @@ class nav_cloning_node:
         if self.cv_right_image.size != 640 * 480 * 3:
             return
         img = resize(self.cv_image, (48, 64), mode='constant')
-        
-        # r, g, b = cv2.split(img)
-        # img = np.asanyarray([r,g,b])
-
-        #img_left = resize(self.cv_left_image, (48, 64), mode='constant')
-        #r, g, b = cv2.split(img_left)
-        #img_left = np.asanyarray([r,g,b])
-
-        #img_right = resize(self.cv_right_image, (48, 64), mode='constant')
-        #r, g, b = cv2.split(img_right)
-        #img_right = np.asanyarray([r,g,b])
-        # cmd_dir = np.asanyarray(self.cmd_dir_data)
         ros_time = str(rospy.Time.now())
 
         if self.episode == 0:
@@ -157,15 +127,8 @@ class nav_cloning_node:
             self.dl.load(self.load_path)
             print("load model",self.load_path)
         
-        # if self.episode == self.episode_num:
-        #     self.learning = False
-        #     self.dl.save(self.save_path)
-        #     #self.dl.load(self.load_path)
-        # if self.episode == self.episode_num+20000:
-        #     os.system('killall roslaunch')
-        #     sys.exit()
-        # else:
         print('\033[32m'+'test_mode'+'\033[0m')
+        # stop
         if self.cmd_dir_data == (0,0,0):
             print('\033[32m'+'stop'+'\033[0m')
             self.vel.linear.x = 0.0
@@ -184,31 +147,7 @@ class nav_cloning_node:
         print(str(self.episode) + ", test, angular:" + str(target_action) + ", self.cmd_dir_data: " + str(self.cmd_dir_data))
 
         self.episode += 1
-        # line = [str(self.episode), "test" + ",angular:" + str(target_action) +", self.cmd_dir_data: " +str(self.cmd_dir_data)]
-        # with open(self.path + self.start_time + '/' + 'training.csv', 'a') as f:
-        #     writer = csv.writer(f, lineterminator='\n')
-        #     writer.writerow(line)
-        # self.vel.linear.x = 0.2
-        # self.vel.angular.z = target_action
-
-        # if self.cmd_dir_data == [0,0,0]:
-        #     print('\033[32m'+'stop'+'\033[0m')
-        #     self.vel.linear.x = 0.0
-        #     self.vel.angular.z = 0.0
-        # else:
-        #     print('\033[32m'+'move'+'\033[0m')
-        #     self.vel.linear.x = 0.2
-        #     self.vel.angular.z = target_action
-
         self.nav_pub.publish(self.vel)
-
-        # temp = copy.deepcopy(img)
-        # cv2.imshow("Resized Image", temp)
-        # temp = copy.deepcopy(img_left)
-        # cv2.imshow("Resized Left Image", temp)
-        # temp = copy.deepcopy(img_right)
-        # cv2.imshow("Resized Right Image", temp)
-        # cv2.waitKey(1)
 
 if __name__ == '__main__':
     rg = nav_cloning_node()
